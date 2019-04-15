@@ -1,8 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { Course } from "../model/course";
 import { interval, Observable, of, timer } from 'rxjs';
-import { catchError, delayWhen, map, retryWhen, shareReplay, tap } from 'rxjs/operators';
-
+import { catchError, delayWhen, map, filter, retryWhen, shareReplay, tap } from 'rxjs/operators';
+import { createHttpObservable } from "../common/util";
 
 @Component({
     selector: 'home',
@@ -14,51 +14,24 @@ export class HomeComponent implements OnInit {
 
     advancedCourses$: Observable<Course[]>;
 
-    constructor() {
-
-    }
-
     ngOnInit() {
         const http$ = createHttpObservable('/api/courses');
 
-        const courses$ = http$.pipe(
-            map(res => Object.values(res['payload']))
-        )
-
-        this.beginnerCourses$ = http$
+        const courses$: Observable<Course[]> = http$
             .pipe(
-                map(courses => courses.pipe(
-                    filter(course => course.category === 'BEGINNER'))
-                )
+                map(res => Object.values(res['payload']))
             );
 
-        this.advancedCourses$ = http$
+        this.beginnerCourses$ = courses$
             .pipe(
-                map(courses => courses.pipe(
-                    filter(course => course.category === 'ADVANCED'))
-                )
+                map((courses: Course[]) => courses
+                    .filter(course => course.category === 'BEGINNER'))
             );
 
-        // const sub = courses$.subscribe(
-        //     (courses: any) => console.log(courses),
-        //     () => { },
-        //     () => console.log('completed')
-        // );
+        this.advancedCourses$ = courses$
+            .pipe(
+                map((courses: Course[]) => courses
+                    .filter(course => course.category === 'ADVANCED'))
+            );
     }
-}
-
-function createHttpObservable(url: string) {
-    return Observable.create(observer => {
-        fetch(url)
-            .then(res => {
-                return res.json();
-            })
-            .then(body => {
-                observer.next(body);
-                observer.complete();
-            })
-            .catch(err => {
-                observer.error(err);
-            })
-    });
 }
