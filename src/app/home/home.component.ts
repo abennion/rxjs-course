@@ -3,6 +3,7 @@ import { Course } from "../model/course";
 import { interval, Observable, of, timer } from 'rxjs';
 import { catchError, delayWhen, map, filter, retryWhen, shareReplay, tap } from 'rxjs/operators';
 import { createHttpObservable } from "../common/util";
+import { createOfflineCompileUrlResolver } from '@angular/compiler';
 
 @Component({
     selector: 'home',
@@ -19,7 +20,9 @@ export class HomeComponent implements OnInit {
 
         const courses$: Observable<Course[]> = http$
             .pipe(
-                map(res => Object.values(res['payload']))
+                tap(() => console.log('http req executed')),
+                map(res => Object.values(res['payload'])),
+                shareReplay()
             );
 
         this.beginnerCourses$ = courses$
